@@ -1,0 +1,51 @@
+
+version: "3.8"
+
+services:
+  mysqldb:
+    image: mysql:8
+    container_name: mysql-taskapi
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: taskapidb
+    ports:
+      - "3341:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - springboot-mysql-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    image: priyankasml/taskapi-backend:latest
+    container_name: springboot-taskapi
+    depends_on:
+      mysqldb:
+        condition: service_healthy
+    ports:
+      - "8098:2000"
+    restart: on-failure
+    networks:
+      - springboot-mysql-net
+    
+
+  frontend:
+    image: priyankasml/taskapi-frontend:latest
+    container_name: react-taskapi
+    depends_on:
+      - backend
+    ports:
+      - "3060:80"
+    restart: on-failure
+    networks:
+      - springboot-mysql-net
+
+volumes:
+  mysql_data:
+
+networks:
+  springboot-mysql-net:
